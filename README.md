@@ -9,12 +9,6 @@ Relatedness = 2x kinship coefficient to get at how related 2 fish are to each ot
 
 Inbreeding coefficient = Probability that the two alleles within individual i are IBD. Calculated for individuals. Equivalent to parents' kinship coefficient
 
-Example: 2 parents that are siblings
- - relatedness between parents = 0.5
- - kinship coefficient between parents = 0.25
- - inbreeding coefficient for their offspring = 0.25
-
-
 |Relatedness | Kinship | Pair type      |
 |------------|---------|----------------|
 |1           | 0.5     | Self           |
