@@ -2,42 +2,59 @@
 
 setwd("")
 
-#### Background info ####
 
-##### Definitions ####
+#### Data prep ####
 
-#Kinship coefficient = probability that two alleles, one from individual i and one from j, 
-#                      are identical by descent. Calculated between 2 potential parents
-#Relatedness = 2x kinship coefficient to get at how related 2 fish are to each other. 
-#              Calculated between 2 potential parents
-#Inbreeding coefficient = Probability that the two alleles within individual i are IBD.
-#                         Calculated for individuals. Equivalent to parents' kinship coefficient
+## Create pedigree input file in excel
+# - Used "2026 PmX pedigree" from Mandi
+# - Copied first 3 columns (PASTE AS VALUES) into new sheet with headers ID, Sire, Dam
+# - Deleted first chunk of rows representing parents of wild fish (ID<100000)
+# - Save as pedigree2026_simple.csv
 
-#Example: 2 parents that are siblings
-# - relatedness between parents = 0.5
-# - kinship coefficient between parents = 0.25
-# - inbreeding coefficient for their offspring = 0.25
+## Import
+ped.df <- read.csv("data/source/pedigree2026_simple.csv", stringsAsFactors=F)
+
+## Edit the pedigree as needed
+#add sex
+ped.df$Sex <- as.integer(substr(ped.df$ID,6,6))
+#change wild parent IDs to NA
+for (i in 1:nrow(ped.df)){
+  if (ped.df$Sire[i]<100000){
+    ped.df$Sire[i] <- NA
+  }
+  if (ped.df$Dam[i]<100000){
+    ped.df$Dam[i] <- NA
+  }
+}
 
 
-#Relatedness  Kinship   Pair type
-# 1           0.5       Self
-# 0.5         0.25      Full sib
-# 0.25        0.125     Half sib
-# 0.125       0.0625    Cousins
-# 0.0625      0.03125   Second cousins
+## Validate the pedigree
+# NOTE that pedtools wants sire Sex=1 and dam Sex=2, but Mandi uses the opposite in her
+#  pedigree, so I need to flip them for this validation
+for (i in 1:nrow(ped.df)){
+  if (ped.df$Sex[i]==1){
+    ped.df$Sex[i] <- 2
+  }  else if (ped.df$Sex[i]==2){
+    ped.df$Sex[i] <- 1
+  }
+}
+library(pedtools)
+validatePed(id=ped.df$ID,fid=ped.df$Sire,mid=ped.df$Dam,sex=ped.df$Sex) #no problems
 
 
-#NOTE: Anne's software outputs relatedness values for each pair cross
-# - Below, I imported her values to make sure that the optiSel package was producing
-#   the same values, but I used the pedigree as input for optiSel, which lists
-#   individuals, not pair crosses. So when I matched up Anne's F values to those from
-#   optiSel, Anne's were 2x higher. This is ok - it's because she is actually reporting
-#   relatedness, not F values. If we want to stay with relatedness, then I will need to
-#   double my F values after sims
-# - Note that this relationship among the 3 terms above is also why it's ok that Mandi
-#   thinks of a gen ID as representing the offspring of the pair cross whereas I think
-#   of it as representing the parent that was crossed - these can both be true because
-#   the parents' kinship coefficient is equivalent to their offsprings' inbreeding coefficient
+## Add gen and yr to pedigree
+ds.gen <- as.integer(substr(ped.df$ID,1,2))
+for (i in 1:nrow(ped.df)){
+  ped.df$PC[i]<- as.integer(substr(ped.df$ID[i],3,5))
+  if (ds.gen[i] %in% seq(10,90,10)){
+    ped.df$yr[i] <- 2007 + as.integer(substr(ds.gen[i],1,1))
+  } else {
+    ped.df$yr[i] <- 2006 + ds.gen[i]
+  }
+}
+
+## Save [excluding sex column]
+#write.csv(ped.df[, -which(names(ped.df)=="Sex")],"data/pedigree2026.csv",row.names=F,quote=F)
 
 
 
@@ -64,12 +81,14 @@ setwd("")
 # 1,000 juveniles per 1,100-L tank, and 600 subadults per 1,100-L tank
 
 
+
 ###### Number of PCs per year ####
 ped <- read.csv("data/pedigree2026.csv")
 
 tapply(X=ped$PC, INDEX=ped$yr, FUN=function(x) length(unique(x)))
 #2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021 2022 2023 2024 2025 
 # 164  247  234  256  281  261  224  243  234  262  256  196  245  297  310  313  311  313 
+
 
 
 ###### Wild parents per generation ####
@@ -198,58 +217,3 @@ aggregate(frac_lost~yr+n_groups,data=out,FUN=median)
 # 10 2023       16      0.87
 # 11 2024       16      0.92
 # 12 2025       16      0.88
-
-
-
-#### Data prep ####
-
-## Create pedigree input file in excel
-# - Used "2026 PmX pedigree" from Mandi
-# - Copied first 3 columns (PASTE AS VALUES) into new sheet with headers ID, Sire, Dam
-# - Deleted first chunk of rows representing parents of wild fish (ID<100000)
-# - Save as pedigree2026_simple.csv
-
-## Import
-ped.df <- read.csv("data/source/pedigree2026_simple.csv", stringsAsFactors=F)
-
-## Edit the pedigree as needed
-#add sex
-ped.df$Sex <- as.integer(substr(ped.df$ID,6,6))
-#change wild parent IDs to NA
-for (i in 1:nrow(ped.df)){
-  if (ped.df$Sire[i]<100000){
-    ped.df$Sire[i] <- NA
-  }
-  if (ped.df$Dam[i]<100000){
-    ped.df$Dam[i] <- NA
-  }
-}
-
-
-## Validate the pedigree
-# NOTE that pedtools wants sire Sex=1 and dam Sex=2, but Mandi uses the opposite in her
-#  pedigree, so I need to flip them for this validation
-for (i in 1:nrow(ped.df)){
-  if (ped.df$Sex[i]==1){
-    ped.df$Sex[i] <- 2
-  }  else if (ped.df$Sex[i]==2){
-    ped.df$Sex[i] <- 1
-  }
-}
-library(pedtools) 
-validatePed(id=ped.df$ID,fid=ped.df$Sire,mid=ped.df$Dam,sex=ped.df$Sex) #no problems
-
-
-## Add gen and yr to pedigree
-ds.gen <- as.integer(substr(ped.df$ID,1,2))
-for (i in 1:nrow(ped.df)){
-  ped.df$PC[i]<- as.integer(substr(ped.df$ID[i],3,5))
-  if (ds.gen[i] %in% seq(10,90,10)){
-    ped.df$yr[i] <- 2007 + as.integer(substr(ds.gen[i],1,1))
-  } else {
-    ped.df$yr[i] <- 2006 + ds.gen[i]
-  }
-}
-
-## Save [excluding sex column]
-#write.csv(ped.df[, -which(names(ped.df)=="Sex")],"data/pedigree2026.csv",row.names=F,quote=F)
