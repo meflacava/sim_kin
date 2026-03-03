@@ -14,3 +14,7 @@ Code to simulate hatchery spawning and calculate kinship trends for Delta Smelt
 |0.25        | 0.125   | Half sib       |
 |0.125       | 0.0625  | Cousins        |
 |0.0625      | 0.03125 | Second cousins |
+
+
+## Scripts:
+- DataWrangling.R = format and validate the pedigree data for use in kinship calculations and simulations; basic hatchery stats
