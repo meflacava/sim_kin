@@ -19,3 +19,4 @@ Code to simulate hatchery spawning and calculate kinship trends for Delta Smelt
 ## Scripts:
 - DataWrangling.R = format and validate the pedigree data for use in kinship calculations and simulations; basic hatchery stats
 - Calc_Validate_F.R = calculate inbreeding coefficient (F) and validate F values
+- PlotReal_F.R = scatterplot of hatchery F values over time with annual medians
