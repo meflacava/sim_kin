@@ -21,3 +21,4 @@ Code to simulate hatchery spawning and calculate kinship trends for Delta Smelt
 - Calc_Validate_F.R = calculate inbreeding coefficient (F) and validate F values
 - PlotReal_F.R = scatterplot of hatchery F values over time with annual medians
 - SimFunctions.R = functions to simulate progeny, choose pairs of fish to spawn, find ancestors of fish to calculate kinship, and simulate generations of spawning
+- RunSim.R = run X generations of forward simulations using SimFunctions.R
