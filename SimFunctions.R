@@ -3,7 +3,7 @@
 #Load to other scripts with:
 #library(kinship2) 
 #library(optiSel)
-#source("SimFunctions.R")
+#source("/Users/melanielacava/Library/CloudStorage/Box-Box/Postdoc/refugeF_DS/SimFunctions.R")
 
 ## Parameters
 # - Simulate offspring
@@ -80,69 +80,77 @@ choose_pairs_avail <- function(spawners, # list of available spawners
   fam <- setNames(as.character(spawners$PC), ids_all)
   n_spawners <- length(ids_all)
   
-  ## crosses per week
-  crosses_perweek <- floor(target_pairs / weeks)
-  crosses_lastweek <- target_pairs - crosses_perweek * (weeks - 1)
-  
-  ## divide spawners among weeks
-  spawner_groups <- vector("list", weeks)
-  
-  if(is.null(early_frac)) {
+  if(weeks==1){ # 1 spawning week
+    spawner_groups <- vector("list", weeks)
+    spawner_groups[[1]] <- ids_all
+    crosses_lastweek <- target_pairs
     
-    ## EVEN split across weeks
-    spawners_perweek <- floor(n_spawners / weeks)
-    idx <- 1
-    for(w in 1:(weeks - 1)) {
-      spawner_groups[[w]] <- ids_all[idx:(idx + spawners_perweek - 1)]
-      idx <- idx + spawners_perweek
-    }
-    spawner_groups[[weeks]] <- ids_all[idx:n_spawners]
+  } else { #multiple spawning weeks
+    ## crosses per week
+    crosses_perweek <- floor(target_pairs / weeks)
+    crosses_lastweek <- target_pairs - crosses_perweek * (weeks - 1)
     
-  } else {
+    ## divide spawners among weeks
+    spawner_groups <- vector("list", weeks)
     
-    ## FRONT-LOADED split
-    if(early_frac <= 0 || early_frac >= 1)
-      stop("early_frac must be between 0 and 1")
-    
-    n_early <- ceiling(n_spawners * early_frac)
-    spawner_groups[[1]] <- ids_all[1:n_early]
-    
-    remaining <- ids_all[(n_early + 1):n_spawners]
-    
-    #Linear decay split among remaining weeks
-    n_weeks_remaining <- weeks - 1
-    n_remaining <- length(remaining)
-    
-    if(n_weeks_remaining > 0 && n_remaining > 0) {
-      # linear decay: assign decreasing counts each week
-      weights <- rev(seq_len(n_weeks_remaining))
-      counts <- floor(weights / sum(weights) * n_remaining)
+    if(is.null(early_frac)) {
       
-      # adjust last week for rounding
-      counts[n_weeks_remaining] <- n_remaining - sum(counts[-n_weeks_remaining])
-      
+      ## EVEN split across weeks
+      spawners_perweek <- floor(n_spawners / weeks)
       idx <- 1
-      for(w in 2:weeks) {
-        spawner_groups[[w]] <- remaining[idx:(idx + counts[w-1] - 1)]
-        idx <- idx + counts[w-1]
+      for(w in 1:(weeks - 1)) {
+        spawner_groups[[w]] <- ids_all[idx:(idx + spawners_perweek - 1)]
+        idx <- idx + spawners_perweek
       }
+      spawner_groups[[weeks]] <- ids_all[idx:n_spawners]
+      
+    } else {
+      
+      ## FRONT-LOADED split
+      if(early_frac <= 0 || early_frac >= 1)
+        stop("early_frac must be between 0 and 1")
+      
+      n_early <- ceiling(n_spawners * early_frac)
+      spawner_groups[[1]] <- ids_all[1:n_early]
+      
+      remaining <- ids_all[(n_early + 1):n_spawners]
+      
+      #Linear decay split among remaining weeks
+      n_weeks_remaining <- weeks - 1
+      n_remaining <- length(remaining)
+      
+      if(n_weeks_remaining > 0 && n_remaining > 0) {
+        # linear decay: assign decreasing counts each week
+        weights <- rev(seq_len(n_weeks_remaining))
+        counts <- floor(weights / sum(weights) * n_remaining)
+        
+        # adjust last week for rounding
+        counts[n_weeks_remaining] <- n_remaining - sum(counts[-n_weeks_remaining])
+        
+        idx <- 1
+        for(w in 2:weeks) {
+          spawner_groups[[w]] <- remaining[idx:(idx + counts[w-1] - 1)]
+          idx <- idx + counts[w-1]
+        }
+      }
+      
+      # #Even split among remaining weeks
+      # if(weeks > 1 && length(remaining) > 0) {
+      #   if(weeks == 2) {
+      #     spawner_groups[[2]] <- remaining
+      #   } else {
+      #     splits <- split(
+      #       remaining,
+      #       cut(seq_along(remaining), weeks - 1, labels = FALSE)
+      #     )
+      #     for(w in 2:weeks) {
+      #       spawner_groups[[w]] <- splits[[w - 1]]
+      #     }
+      #   }
+      # }
     }
-    
-    # #Even split among remaining weeks
-    # if(weeks > 1 && length(remaining) > 0) {
-    #   if(weeks == 2) {
-    #     spawner_groups[[2]] <- remaining
-    #   } else {
-    #     splits <- split(
-    #       remaining,
-    #       cut(seq_along(remaining), weeks - 1, labels = FALSE)
-    #     )
-    #     for(w in 2:weeks) {
-    #       spawner_groups[[w]] <- splits[[w - 1]]
-    #     }
-    #   }
-    # }
   }
+
   
   ## global state across weeks
   used_id <- setNames(rep(FALSE, length(ids_all)), ids_all) #exclude previously selected fish
