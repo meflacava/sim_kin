@@ -6,6 +6,7 @@
 #### Load packages and scripts ####
 setwd("")
 library(kinship2)
+Sys.setenv(RGL_USE_NULL = TRUE)
 library(optiSel)
 source("SimFunctions.R")
 
@@ -17,6 +18,9 @@ source("SimFunctions.R")
 
 ## Import pedigree
 ped.df <- read.csv("data/pedigree2026.csv", stringsAsFactors=F)
+#exclude 1 pair with high kinship that was accidentally crossed
+# (to avoid choosing their offspring in the first sim gen)
+ped.df <- ped.df[ped.df$ID!=192401 & ped.df$ID!=192402,]
 
 ## Create 1st pairs object to simulate progeny
 pairs <- data.frame(Sire = ped.df$ID[ped.df$yr==max(ped.df$yr) & (substr(ped.df$ID,6,6)==2)])
@@ -28,19 +32,19 @@ pairs$yr <- max(ped.df$yr)
 
 #### Run simulation ####
 ped.new <- run_forward_sim(ped.df,pairs,
-                           n.generations=48,
+                           n.generations=50,
                            target_pairs=312,
                            max.progeny=12,
-                           kin_seq=c(0.03125,0.0625),
+                           kin_seq=seq(0.005,0.0625,0.001),
                            max.fam=4,
-                           weeks=8,
+                           weeks=4, #weeks = days in manuscript
                            loss=0.25,
                            early_frac=0.5,
                            tries=100)
 #length(unique(ped.new$yr))-length(unique(ped.df$yr)) #check # gens if stops early
 
 ## Save pedigree & parameters
-file_name <- "sim_48gen_312pc_varykin_avail_8weeks"
+file_name <- "sim_50gen_312pc_varykin_avail_8weeks"
 write.csv(ped.new, paste0("output/",file_name,".csv"), quote=F, row.names=FALSE)
 
 #save parameters
