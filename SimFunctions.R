@@ -3,7 +3,7 @@
 #Load to other scripts with:
 #library(kinship2) 
 #library(optiSel)
-#source("/Users/melanielacava/Library/CloudStorage/Box-Box/Postdoc/refugeF_DS/SimFunctions.R")
+#source("SimFunctions.R")
 
 ## Parameters
 # - Simulate offspring
@@ -217,8 +217,9 @@ choose_pairs_avail <- function(spawners, # list of available spawners
         ny <- ifelse(is.na(fam_count_local[fy]),0,fam_count_local[fy])
         if(nx + 1 > max.fam || ny + 1 > max.fam) next
         
+        #check if families have been paired up in this generation already
         key <- ifelse(fx < fy, paste(fx,fy,sep="|"), paste(fy,fx,sep="|"))
-        if(exists(key, envir=used_fam_local, inherits=FALSE)) next
+        if(exists(key, envir=used_fam_local, inherits=FALSE)) next #comment out this line for random sim
         
         # accept pair
         used_id_local[x] <- used_id_local[y] <- TRUE
@@ -315,6 +316,9 @@ run_forward_sim <- function(input_pedigree,
   # track which kin_thresh was used per generation
   kin_used <- numeric(0)
   
+  # Variable to keep track of the starting index for kin_seq
+  start_index <- 1  # Start with first kin_seq value for the first generation
+  
   for(g in 1:n.generations) {
     message("Generation ", g)
     
@@ -358,7 +362,10 @@ run_forward_sim <- function(input_pedigree,
     pairs_new <- NULL
     kin_used_g <- NA
     
-    for(k in kin_seq) {
+    #for(k in kin_seq) {  #TEST
+    for(i in start_index:length(kin_seq)) {    #TEST
+      k <- kin_seq[i] # Get the kinship threshold from the sequence  #TEST
+      
       message("  Trying kin_thresh = ", k)
       
       tmp <- try(
@@ -379,6 +386,7 @@ run_forward_sim <- function(input_pedigree,
       if(!inherits(tmp, "try-error") && nrow(tmp) >= target_pairs) {
         pairs_new <- tmp
         kin_used_g <- k
+        start_index <- i  # Update the starting index for the next generation #TEST
         break
       }
     }
