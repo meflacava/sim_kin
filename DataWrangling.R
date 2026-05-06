@@ -81,6 +81,29 @@ for (i in 1:nrow(ped.df)){
 # 1,000 juveniles per 1,100-L tank, and 600 subadults per 1,100-L tank
 
 
+###### Number of crosses, WT and C parents ####
+ped <- read.csv("data/pedigree2026.csv")
+f <- read.csv("output/pedigree2026_Fvalues.csv")
+
+n <- tapply(X=ped$ID, INDEX=ped$yr, FUN=function(x) length(unique(x)))
+w <- tapply(X=ped$Sire, INDEX=ped$yr, FUN=function(x) sum(is.na(x)))
+meds <- aggregate(F_R~yr,data=f,median,na.rm=T)
+df <- data.frame(yr=as.numeric(names(n)),n.spawners=n,n.wild=w,
+                 n.cultured=n-w,
+                 prop.wild=round(w/n,2),
+                 prop.cultured=round((n-w)/n,2),
+                 median.F=round(meds$F_R,4))
+df$median.F <- format(df$median.F, scientific = FALSE)
+write.csv(df,"output/n.crosses_2008-2025.csv",row.names=F,quote=F)
+
+
+## Check wild-caught for 2021-2025
+check <- ped[is.na(ped$Sire) & ped$yr>2020,]
+
+cross <- read.csv("data/refuge_crosses_2008-2025_withGenID.csv")
+cross[cross$Sire %in% check$ID | cross$Dam %in% check$ID,]
+
+            
 
 ###### Number of PCs per year ####
 ped <- read.csv("data/pedigree2026.csv")
